@@ -23,9 +23,9 @@ const int northGreenLightPin = 6;
 const int northYellowLightPin = 7;
 const int northRedLightPin = 8;
 
-const int northPedestrianButtonPin = 9;
+const int northPedestrianButtonPin = 0;
 
-const int northPedestrianLightPin = 10;
+const int northPedestrianLightPin = 9;
 
 //South-bound pins
 const int southCarSensorTriggerPin = 5;
@@ -35,9 +35,9 @@ const int southGreenLightPin = 11;
 const int southYellowLightPin = 12;
 const int southRedLightPin = 13;
 
-const int southPedestrianButtonPin = 0;
+const int southPedestrianButtonPin = 1;
 
-const int southPedestrianLightPin = 1;
+const int southPedestrianLightPin = 10;
 
 //North-bound flags
 bool northCarSensorFlag = false;
@@ -69,7 +69,17 @@ ISR(TIMER1_COMPA_vect) {
   }
 }
 
-//North-bound input interrupt functions
+//Button pin-change interrupt ISR
+ISR(PCINT2_vect) {
+  if (PIND & bit(0)) {
+    northPedestrianButtonFlag = true;
+  }
+  if (PIND & bit(1)) {
+    southPedestrianButtonFlag = true;
+  }
+}
+
+//North-bound sensor interrupt function
 void northCarSensorISR() {
     static unsigned long northStartTime;
 
@@ -80,11 +90,7 @@ void northCarSensorISR() {
     }
 }
 
-void northPedestrianButtonISR() {
-  northPedestrianButtonFlag = true;
-}
-
-//South-bound input interrupt functions
+//South-bound sensor interrupt function
 void southCarSensorISR() {
     static unsigned long southStartTime;
 
@@ -93,10 +99,6 @@ void southCarSensorISR() {
     } else if ((((micros() - southStartTime) / 2) / 29.1) < 5.0) {
       southCarSensorFlag = true;
     }
-}
-
-void southPedestrianButtonISR() {
-  southPedestrianButtonFlag = true;
 }
 
 //Direction switching sequence
@@ -202,7 +204,17 @@ void setup() {
   pinMode(southRedLightPin, OUTPUT);
   
   pinMode(southPedestrianLightPin, OUTPUT);
+  
+  //Button pin change interrupt setup
+  PCMSK2 |= bit(PCINT16);
+  PCMSK2 |= bit(PCINT17);
+  PCIFR  |= bit (PCIF2);
+  PCICR  |= bit (PCIE2);
 
+  //Button pin modes and pull-up resistor
+  pinMode(northPedestrianButtonPin, INPUT_PULLUP);
+  pinMode(southPedestrianButtonPin, INPUT_PULLUP);
+  
   //Ultrasonic sensor pin modes
   pinMode(northCarSensorTriggerPin, OUTPUT);
   pinMode(northCarSensorEchoPin, INPUT);
@@ -213,10 +225,6 @@ void setup() {
   //Attach car sensors to input interrupts
   attachInterrupt(0, northCarSensorISR, CHANGE);
   attachInterrupt(1, southCarSensorISR, CHANGE);
-
-  //Attach pedestrian crossing buttons to input interrupts
-  attachInterrupt(digitalPinToInterrupt(northPedestrianButtonPin), northPedestrianButtonISR, CHANGE); 
-  attachInterrupt(digitalPinToInterrupt(southPedestrianButtonPin), southPedestrianButtonISR, CHANGE); 
 
   //Initial state
   setActiveLight(NORTH, GREEN);

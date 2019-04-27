@@ -3,7 +3,7 @@
 //Simulation of a one-way intersection with a one-way pedestrian crossing
 
 //csci4287-final.ino
-//main project file, containing setup and loop functions
+//main project file
 
 #include "avr/io.h"
 #include "avr/interrupt.h"
@@ -69,18 +69,30 @@ ISR(TIMER1_COMPA_vect) {
   }
 }
 
-//North-bound interrupt functions
+//North-bound input interrupt functions
 void northCarSensorISR() {
-  northCarSensorFlag = true;
+    static unsigned long northStartTime;
+
+    if (digitalRead(2)) {
+      northStartTime = micros();
+    } else if ((((micros() - northStartTime) / 2) / 29.1) < 5.0) {
+      northCarSensorFlag = true;
+    }
 }
 
 void northPedestrianButtonISR() {
   northPedestrianButtonFlag = true;
 }
 
-//South-bound interrupt functions
+//South-bound input interrupt functions
 void southCarSensorISR() {
-  southCarSensorFlag = true;
+    static unsigned long southStartTime;
+
+    if (digitalRead(2)) {
+      southStartTime = micros();
+    } else if ((((micros() - southStartTime) / 2) / 29.1) < 5.0) {
+      southCarSensorFlag = true;
+    }
 }
 
 void southPedestrianButtonISR() {
@@ -200,7 +212,7 @@ void setup() {
   
   //Attach car sensors to input interrupts
   attachInterrupt(0, northCarSensorISR, CHANGE);
-  attachInterrupt(1, southCarSensorISR, CHANGE); //TODO: Add HIGH/LOW trigger to determine distance, or maybe just use CHANGE and ignore threshold (hope it just works, if it works remove trigger pins
+  attachInterrupt(1, southCarSensorISR, CHANGE);
 
   //Attach pedestrian crossing buttons to input interrupts
   attachInterrupt(digitalPinToInterrupt(northPedestrianButtonPin), northPedestrianButtonISR, CHANGE); 
@@ -213,6 +225,17 @@ void setup() {
 
 //Loop
 void loop() {
+  //Ultrasonic sensor edge triggers
+  digitalWrite(northCarSensorTriggerPin, LOW);
+  digitalWrite(southCarSensorTriggerPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(northCarSensorTriggerPin, HIGH);
+  digitalWrite(southCarSensorTriggerPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(northCarSensorTriggerPin, LOW);
+  digitalWrite(southCarSensorTriggerPin, LOW);
+
+  //Main update function to detect when to trigger a light switch
   if (!switchingDirections) {
     if (crossingDirection == NORTH) {
       if (((millis() >= (cycleStartTime + halfCycleTime)) && (southCarSensorFlag || southPedestrianButtonFlag)) || (millis() >= (cycleStartTime + fullCycleTime))) {

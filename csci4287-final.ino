@@ -87,7 +87,7 @@ ISR(PCINT0_vect) {
 void northCarSensorISR() {
     static unsigned long northStartTime;
 
-    if (digitalRead(2)) {
+    if (digitalRead(northCarSensorEchoPin)) {
       northStartTime = micros();
     } else if ((((micros() - northStartTime) / 2) / 29.1) < 5.0) {
       northCarSensorFlag = true;
@@ -98,10 +98,10 @@ void northCarSensorISR() {
 void eastCarSensorISR() {
     static unsigned long eastStartTime;
 
-    if (digitalRead(2)) {
+    if (digitalRead(eastCarSensorEchoPin)) {
       eastStartTime = micros();
     } else if ((((micros() - eastStartTime) / 2) / 29.1) < 5.0) {
-      eastCarSensorFlag = true;
+      //eastCarSensorFlag = true;
     }
 }
 

@@ -101,7 +101,7 @@ void eastCarSensorISR() {
     if (digitalRead(eastCarSensorEchoPin)) {
       eastStartTime = micros();
     } else if ((((micros() - eastStartTime) / 2) / 29.1) < 5.0) {
-      //eastCarSensorFlag = true;
+      eastCarSensorFlag = true;
     }
 }
 
@@ -114,7 +114,7 @@ void switchDirections() {
     setActiveLight(NORTH, YELLOW);
     delay(2000);
     setActiveLight(NORTH, RED);
-    delay(5000);
+    delay(3000);
     setActiveLight(EAST, GREEN);
     
     crossingDirection = EAST;
@@ -125,7 +125,7 @@ void switchDirections() {
     setActiveLight(EAST, YELLOW);
     delay(2000);
     setActiveLight(EAST, RED);
-    delay(5000);
+    delay(3000);
     setActiveLight(NORTH, GREEN);
     
     crossingDirection = NORTH;
@@ -229,8 +229,8 @@ void setup() {
   pinMode(eastCarSensorEchoPin, INPUT);
   
   //Attach car sensors to input interrupts
-  attachInterrupt(0, northCarSensorISR, CHANGE);
-  attachInterrupt(1, eastCarSensorISR, CHANGE);
+  //attachInterrupt(0, northCarSensorISR, CHANGE);
+  //attachInterrupt(1, eastCarSensorISR, CHANGE);
 
   //Initial state
   setActiveLight(NORTH, GREEN);
@@ -249,6 +249,14 @@ void loop() {
   digitalWrite(northCarSensorTriggerPin, LOW);
   digitalWrite(eastCarSensorTriggerPin, LOW);
 
+  if (pulseIn(northCarSensorEchoPin, HIGH) / 2 / 29.1) {
+      northCarSensorFlag = true;
+  }
+
+  if (pulseIn(eastCarSensorEchoPin, HIGH) / 2 / 29.1) {
+      eastCarSensorFlag = true;
+  }
+  
   //Main update function to detect when to trigger a light switch
   if (!switchingDirections) {
     if (crossingDirection == NORTH) {
@@ -261,4 +269,6 @@ void loop() {
       }
     }
   }
+
+  delay(100);
 }

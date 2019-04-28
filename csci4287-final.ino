@@ -254,7 +254,7 @@ void loop() {
   }
 
   if (pulseIn(eastCarSensorEchoPin, HIGH) / 2 / 29.1) {
-      eastCarSensorFlag = true;
+      //eastCarSensorFlag = true;
   }
   
   //Main update function to detect when to trigger a light switch

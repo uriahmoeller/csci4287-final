@@ -42,10 +42,12 @@ const int eastPedestrianLightPin = 10;
 //North-bound flags
 bool northCarSensorFlag = false;
 bool northPedestrianButtonFlag = false;
+bool northCarSensorHeldFlag = false;
 
 //East-bound flags
 bool eastCarSensorFlag = false;
 bool eastPedestrianButtonFlag = false;
+bool eastCarSensorHeldFlag = false;
 
 //Global states
 bool switchingDirections = false;
@@ -249,13 +251,17 @@ void loop() {
   digitalWrite(northCarSensorTriggerPin, LOW);
   digitalWrite(eastCarSensorTriggerPin, LOW);
 
-  if (pulseIn(northCarSensorEchoPin, HIGH) / 2 / 29.1) {
-      northCarSensorFlag = true;
+  int northCarSensorDistance = pulseIn(northCarSensorEchoPin, HIGH) / 2 / 29.1;
+  if (northCarSensorHeldFlag && northCarSensorDistance < 10) {
+    northCarSensorFlag = true;
+    northCarSensorHeldFlag = false;
+  } else if (northCarSensorDistance < 10) {
+    northCarSensorHeldFlag = true;
+  } else {
+    northCarSensorHeldFlag = false;
   }
 
-  if (pulseIn(eastCarSensorEchoPin, HIGH) / 2 / 29.1) {
-      //eastCarSensorFlag = true;
-  }
+  //
   
   //Main update function to detect when to trigger a light switch
   if (!switchingDirections) {

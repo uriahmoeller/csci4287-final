@@ -23,29 +23,29 @@ const int northGreenLightPin = 6;
 const int northYellowLightPin = 7;
 const int northRedLightPin = 8;
 
-const int northPedestrianButtonPin = 0;
+const int northPedestrianButtonPin = 1;
 
-const int northPedestrianLightPin = 9;
+const int northPedestrianLightPin = 0;
 
-//South-bound pins
-const int southCarSensorTriggerPin = 5;
-const int southCarSensorEchoPin = 3;
+//East-bound pins
+const int eastCarSensorTriggerPin = 5;
+const int eastCarSensorEchoPin = 3;
 
-const int southGreenLightPin = 11;
-const int southYellowLightPin = 12;
-const int southRedLightPin = 13;
+const int eastGreenLightPin = 11;
+const int eastYellowLightPin = 12;
+const int eastRedLightPin = 13;
 
-const int southPedestrianButtonPin = 1;
+const int eastPedestrianButtonPin = 9;
 
-const int southPedestrianLightPin = 10;
+const int eastPedestrianLightPin = 10;
 
 //North-bound flags
 bool northCarSensorFlag = false;
 bool northPedestrianButtonFlag = false;
 
-//South-bound flags
-bool southCarSensorFlag = false;
-bool southPedestrianButtonFlag = false;
+//East-bound flags
+bool eastCarSensorFlag = false;
+bool eastPedestrianButtonFlag = false;
 
 //Global states
 bool switchingDirections = false;
@@ -60,22 +60,26 @@ ISR(TIMER1_COMPA_vect) {
   if (!switchingDirections) {
     if (crossingDirection == NORTH && northPedestrianButtonFlag == true) {
       digitalWrite(northPedestrianLightPin, !digitalRead(northPedestrianLightPin));
-    } else if (crossingDirection == SOUTH && southPedestrianButtonFlag == true) {
-      digitalWrite(southPedestrianLightPin, !digitalRead(southPedestrianLightPin));
+    } else if (crossingDirection == SOUTH && eastPedestrianButtonFlag == true) {
+      digitalWrite(eastPedestrianLightPin, !digitalRead(eastPedestrianLightPin));
     }    
   } else {
     digitalWrite(northPedestrianLightPin, LOW);
-    digitalWrite(southPedestrianLightPin, LOW);
+    digitalWrite(eastPedestrianLightPin, LOW);
   }
 }
 
-//Button pin-change interrupt ISR
+//North-bound button pin-change interrupt ISR
 ISR(PCINT2_vect) {
-  if (PIND & bit(0)) {
+  if (PIND & bit(1)) {
     northPedestrianButtonFlag = true;
   }
-  if (PIND & bit(1)) {
-    southPedestrianButtonFlag = true;
+}
+
+//East-bound button pin-change interrupt ISR
+ISR(PCINT0_vect) {
+  if (PINB & bit(1)) {
+    eastPedestrianButtonFlag = true;
   }
 }
 
@@ -90,14 +94,14 @@ void northCarSensorISR() {
     }
 }
 
-//South-bound sensor interrupt function
-void southCarSensorISR() {
-    static unsigned long southStartTime;
+//East-bound sensor interrupt function
+void eastCarSensorISR() {
+    static unsigned long eastStartTime;
 
     if (digitalRead(2)) {
-      southStartTime = micros();
-    } else if ((((micros() - southStartTime) / 2) / 29.1) < 5.0) {
-      southCarSensorFlag = true;
+      eastStartTime = micros();
+    } else if ((((micros() - eastStartTime) / 2) / 29.1) < 5.0) {
+      eastCarSensorFlag = true;
     }
 }
 
@@ -114,9 +118,9 @@ void switchDirections() {
     setActiveLight(SOUTH, GREEN);
     
     crossingDirection = SOUTH;
-    southCarSensorFlag = false;
+    eastCarSensorFlag = false;
   } else if (crossingDirection == SOUTH) {
-    southPedestrianButtonFlag = false;
+    eastPedestrianButtonFlag = false;
     
     setActiveLight(SOUTH, YELLOW);
     delay(2000);
@@ -154,19 +158,19 @@ void setActiveLight (cross_direction targetDirection, light_color targetColor) {
   } else if (targetDirection == SOUTH) {
     switch (targetColor) {
       case GREEN:
-        digitalWrite(southGreenLightPin, HIGH);
-        digitalWrite(southYellowLightPin, LOW);
-        digitalWrite(southRedLightPin, LOW);
+        digitalWrite(eastGreenLightPin, HIGH);
+        digitalWrite(eastYellowLightPin, LOW);
+        digitalWrite(eastRedLightPin, LOW);
         break;
       case YELLOW:
-        digitalWrite(southGreenLightPin, LOW);
-        digitalWrite(southYellowLightPin, HIGH);
-        digitalWrite(southRedLightPin, LOW);
+        digitalWrite(eastGreenLightPin, LOW);
+        digitalWrite(eastYellowLightPin, HIGH);
+        digitalWrite(eastRedLightPin, LOW);
         break;
       case RED:
-        digitalWrite(southGreenLightPin, LOW);
-        digitalWrite(southYellowLightPin, LOW);
-        digitalWrite(southRedLightPin, HIGH);
+        digitalWrite(eastGreenLightPin, LOW);
+        digitalWrite(eastYellowLightPin, LOW);
+        digitalWrite(eastRedLightPin, HIGH);
         break;
     }
   }
@@ -199,32 +203,36 @@ void setup() {
 
   pinMode(northPedestrianLightPin, OUTPUT);
   
-  pinMode(southGreenLightPin, OUTPUT);
-  pinMode(southYellowLightPin, OUTPUT);
-  pinMode(southRedLightPin, OUTPUT);
+  pinMode(eastGreenLightPin, OUTPUT);
+  pinMode(eastYellowLightPin, OUTPUT);
+  pinMode(eastRedLightPin, OUTPUT);
   
-  pinMode(southPedestrianLightPin, OUTPUT);
+  pinMode(eastPedestrianLightPin, OUTPUT);
   
-  //Button pin change interrupt setup
-  PCMSK2 |= bit(PCINT16);
+  //North-bound button pin change interrupt setup
   PCMSK2 |= bit(PCINT17);
-  PCIFR  |= bit (PCIF2);
-  PCICR  |= bit (PCIE2);
+  PCIFR  |= bit(PCIF2);
+  PCICR  |= bit(PCIE2);
 
+  //East-bound button pin change interrupt setup
+  PCMSK0 |= bit(PCINT1);
+  PCIFR  |= bit(PCIF0);
+  PCICR  |= bit(PCIE0);
+  
   //Button pin modes and pull-up resistor
   pinMode(northPedestrianButtonPin, INPUT_PULLUP);
-  pinMode(southPedestrianButtonPin, INPUT_PULLUP);
+  pinMode(eastPedestrianButtonPin, INPUT_PULLUP);
   
   //Ultrasonic sensor pin modes
   pinMode(northCarSensorTriggerPin, OUTPUT);
   pinMode(northCarSensorEchoPin, INPUT);
   
-  pinMode(southCarSensorTriggerPin, OUTPUT);
-  pinMode(southCarSensorEchoPin, INPUT);
+  pinMode(eastCarSensorTriggerPin, OUTPUT);
+  pinMode(eastCarSensorEchoPin, INPUT);
   
   //Attach car sensors to input interrupts
   attachInterrupt(0, northCarSensorISR, CHANGE);
-  attachInterrupt(1, southCarSensorISR, CHANGE);
+  attachInterrupt(1, eastCarSensorISR, CHANGE);
 
   //Initial state
   setActiveLight(NORTH, GREEN);
@@ -235,18 +243,18 @@ void setup() {
 void loop() {
   //Ultrasonic sensor edge triggers
   digitalWrite(northCarSensorTriggerPin, LOW);
-  digitalWrite(southCarSensorTriggerPin, LOW);
+  digitalWrite(eastCarSensorTriggerPin, LOW);
   delayMicroseconds(2);
   digitalWrite(northCarSensorTriggerPin, HIGH);
-  digitalWrite(southCarSensorTriggerPin, HIGH);
+  digitalWrite(eastCarSensorTriggerPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(northCarSensorTriggerPin, LOW);
-  digitalWrite(southCarSensorTriggerPin, LOW);
+  digitalWrite(eastCarSensorTriggerPin, LOW);
 
   //Main update function to detect when to trigger a light switch
   if (!switchingDirections) {
     if (crossingDirection == NORTH) {
-      if (((millis() >= (cycleStartTime + halfCycleTime)) && (southCarSensorFlag || southPedestrianButtonFlag)) || (millis() >= (cycleStartTime + fullCycleTime))) {
+      if (((millis() >= (cycleStartTime + halfCycleTime)) && (eastCarSensorFlag || eastPedestrianButtonFlag)) || (millis() >= (cycleStartTime + fullCycleTime))) {
         switchDirections();
       }
     } else if (crossingDirection == SOUTH) {

@@ -23,9 +23,9 @@ const int northGreenLightPin = 6;
 const int northYellowLightPin = 7;
 const int northRedLightPin = 8;
 
-const int northPedestrianButtonPin = 1;
+//const int northPedestrianButtonPin = 1;
 
-const int northPedestrianLightPin = 0;
+//const int northPedestrianLightPin = 0;
 
 //East-bound pins
 const int eastCarSensorTriggerPin = 5;
@@ -61,22 +61,22 @@ enum light_color { GREEN, YELLOW, RED };
 ISR(TIMER1_COMPA_vect) {
   if (!switchingDirections) {
     if (crossingDirection == NORTH && northPedestrianButtonFlag == true) {
-      digitalWrite(northPedestrianLightPin, !digitalRead(northPedestrianLightPin));
+      //digitalWrite(northPedestrianLightPin, !digitalRead(northPedestrianLightPin));
     } else if (crossingDirection == EAST && eastPedestrianButtonFlag == true) {
       digitalWrite(eastPedestrianLightPin, !digitalRead(eastPedestrianLightPin));
     }    
   } else {
-    digitalWrite(northPedestrianLightPin, LOW);
+    //digitalWrite(northPedestrianLightPin, LOW);
     digitalWrite(eastPedestrianLightPin, LOW);
   }
 }
 
 //North-bound button pin-change interrupt ISR
-ISR(PCINT2_vect) {
-  if (PIND & (1 << PD1)) {
-    northPedestrianButtonFlag = true;
-  }
-}
+//ISR(PCINT2_vect) {
+//  if (PIND & (1 << PD1)) {
+//    //northPedestrianButtonFlag = true;
+//  }
+//}
 
 //East-bound button pin-change interrupt ISR
 ISR(PCINT0_vect) {
@@ -91,8 +91,11 @@ void northCarSensorISR() {
 
     if (digitalRead(northCarSensorEchoPin)) {
       northStartTime = micros();
-    } else if ((((micros() - northStartTime) / 2) / 29.1) < 5.0) {
-      northCarSensorFlag = true;
+    } else{
+      float dist = ((micros() - northStartTime)/2.0)/29.1;
+      Serial.println(dist);
+      if (dist < 5.0) 
+        northCarSensorFlag = true;
     }
 }
 
@@ -111,7 +114,7 @@ void eastCarSensorISR() {
 void switchDirections() {
   switchingDirections = true;
   if (crossingDirection == NORTH) {
-    northPedestrianButtonFlag = false;
+    //northPedestrianButtonFlag = false;
     
     setActiveLight(NORTH, YELLOW);
     delay(2000);
@@ -180,6 +183,7 @@ void setActiveLight (cross_direction targetDirection, light_color targetColor) {
 
 //Setup
 void setup() {
+  Serial.begin(9600);
   noInterrupts();
   //1 sec timer
   TCCR1A = 0; 
@@ -195,8 +199,8 @@ void setup() {
   TIMSK1 = (1 << OCIE1A);
   
   //North-bound button pin change interrupt setup
-  PCMSK2 |= (1 << PCINT17);
-  PCICR  |= (1 << PCIE2);
+  //PCMSK2 |= (1 << PCINT17);
+  //PCICR  |= (1 << PCIE2);
 
   //East-bound button pin change interrupt setup
   PCMSK0 |= (1 << PCINT1);
@@ -211,7 +215,7 @@ void setup() {
   pinMode(northYellowLightPin, OUTPUT);
   pinMode(northRedLightPin, OUTPUT);
 
-  pinMode(northPedestrianLightPin, OUTPUT);
+  //pinMode(northPedestrianLightPin, OUTPUT);
   
   pinMode(eastGreenLightPin, OUTPUT);
   pinMode(eastYellowLightPin, OUTPUT);
@@ -220,7 +224,7 @@ void setup() {
   pinMode(eastPedestrianLightPin, OUTPUT);
   
   //Button pin modes and pull-up resistor
-  pinMode(northPedestrianButtonPin, INPUT_PULLUP);
+  //pinMode(northPedestrianButtonPin, INPUT_PULLUP);
   pinMode(eastPedestrianButtonPin, INPUT_PULLUP);
   
   //Ultrasonic sensor pin modes

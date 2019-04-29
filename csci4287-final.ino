@@ -85,28 +85,6 @@ ISR(PCINT0_vect) {
   }
 }
 
-//North-bound sensor interrupt function
-void northCarSensorISR() {
-    static unsigned long northStartTime;
-
-    if (digitalRead(northCarSensorEchoPin)) {
-      northStartTime = micros();
-    } else if ((((micros() - northStartTime) / 2) / 29.1) < 5.0) {
-      northCarSensorFlag = true;
-    }
-}
-
-//East-bound sensor interrupt function
-void eastCarSensorISR() {
-    static unsigned long eastStartTime;
-
-    if (digitalRead(eastCarSensorEchoPin)) {
-      eastStartTime = micros();
-    } else if ((((micros() - eastStartTime) / 2) / 29.1) < 5.0) {
-      eastCarSensorFlag = true;
-    }
-}
-
 //Direction switching sequence
 void switchDirections() {
   switchingDirections = true;

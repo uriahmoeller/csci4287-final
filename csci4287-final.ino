@@ -12,8 +12,8 @@
 long cycleStartTime = 0;
 
 //Constants
-const long fullCycleTime = 30000;
-const long halfCycleTime = 15000;
+const long fullCycleTime = 10000;
+const long halfCycleTime = 5000;
 
 //North-bound pins
 const int northCarSensorTriggerPin = 4;
@@ -241,26 +241,46 @@ void setup() {
 
 //Loop
 void loop() {
+  noInterrupts();
   //Ultrasonic sensor edge triggers
   digitalWrite(northCarSensorTriggerPin, LOW);
-  digitalWrite(eastCarSensorTriggerPin, LOW);
   delayMicroseconds(2);
   digitalWrite(northCarSensorTriggerPin, HIGH);
-  digitalWrite(eastCarSensorTriggerPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(northCarSensorTriggerPin, LOW);
-  digitalWrite(eastCarSensorTriggerPin, LOW);
 
-  int northCarSensorDistance = pulseIn(northCarSensorEchoPin, HIGH) / 2 / 29.1;
-  if (northCarSensorHeldFlag && northCarSensorDistance < 10) {
-    northCarSensorFlag = true;
-    northCarSensorHeldFlag = false;
-  } else if (northCarSensorDistance < 10) {
-    northCarSensorHeldFlag = true;
-  } else {
-    northCarSensorHeldFlag = false;
+  int northCarSensorDistance = pulseIn(northCarSensorEchoPin, HIGH, 1500) / 2 / 29.1;
+  if (northCarSensorDistance > 0) {
+    if (northCarSensorHeldFlag && northCarSensorDistance < 10) {
+      northCarSensorFlag = true;
+      northCarSensorHeldFlag = false;
+    } else if (northCarSensorDistance < 10) {
+      northCarSensorHeldFlag = true;
+    } else {
+      northCarSensorHeldFlag = false;
+    }
   }
+  
+  delay(100);
 
+  digitalWrite(eastCarSensorTriggerPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(eastCarSensorTriggerPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(eastCarSensorTriggerPin, LOW);
+  
+  int eastCarSensorDistance = pulseIn(eastCarSensorEchoPin, HIGH, 1500) / 2 / 29.1;
+  if (eastCarSensorDistance > 0) {
+    if (eastCarSensorHeldFlag && eastCarSensorDistance < 10) {
+      eastCarSensorFlag = true;
+      eastCarSensorHeldFlag = false;
+    } else if (eastCarSensorDistance < 10) {
+      eastCarSensorHeldFlag = true;
+    } else {
+      eastCarSensorHeldFlag = false;
+    }
+  }
+  interrupts();
   //
   
   //Main update function to detect when to trigger a light switch
